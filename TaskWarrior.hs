@@ -67,6 +67,10 @@ mainStyle =
      
    tbody tr:hover  
      background-color: rgb(242,244,255)
+     
+   tr.started
+     font-weight: bold
+     font-style: italic
    |]
 
 tasksTable :: [Task] -> Widget
@@ -82,20 +86,16 @@ tasksTable ts =
          <th>Tags
      <tbody>    
        $forall t <- ts
-         <tr>
+         <tr class=#{rowClass t}>
            <td>#{taskId t}
            <td>#{taskDescription t}
            <td>#{fromMaybe "" $ taskProject t}
            <td>#{maybe "" show $ taskPriority t} 
            <td>#{showTags $ taskTags t}
    |]
-  
-taskWidget :: Task -> Widget
-taskWidget t = 
-  [whamlet|
-   #{show t}
-   |]
-  
+   where rowClass :: Task -> Text
+         rowClass t = if taskStarted t then "started" else ""
+
 main :: IO ()
 main = warpDebug 3000 TaskWarrior
 
@@ -108,6 +108,7 @@ data Task = Task
   , taskProject     :: Maybe Text
   , taskPriority    :: Maybe Priority
   , taskTags        :: [Tag]
+  , taskStarted     :: Bool
   } deriving Show
 
 newtype Tag = Tag Text
@@ -129,11 +130,13 @@ instance FromJSON Task where
     proj  <- v .:? "project"
     pri   <- v .:? "priority"
     tags  <- v .:? "tags"
+    strtd <- v .:? "start" :: T.Parser (Maybe Text)
     return Task { taskId          = ident
                 , taskDescription = desc
                 , taskProject     = proj
                 , taskPriority    = pri
                 , taskTags        = [] `fromMaybe` tags
+                , taskStarted     = maybe False (const True) strtd
                 }
 
 instance FromJSON Priority where
