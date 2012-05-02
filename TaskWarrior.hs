@@ -15,12 +15,13 @@ import Control.Applicative
 import Control.Monad
 import Data.Either
 import Data.Maybe
+import Data.Text (Text,unpack)
 import qualified Data.ByteString.Char8 as BS
 -- Aeson's "encode" to json generates lazy bytestrings
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import Data.Attoparsec
-import Data.Text (Text)
+import Data.List (intercalate)
 import System.Process
 
 
@@ -45,7 +46,7 @@ mainStyle =
      
    table
      margin: 45px
-     width: 480px
+     width: 550px
      border-collapse: collapse
      text-align: left
      
@@ -78,6 +79,7 @@ tasksTable ts =
          <th>Description
          <th>Project
          <th>Priority
+         <th>Tags
      <tbody>    
        $forall t <- ts
          <tr>
@@ -85,6 +87,7 @@ tasksTable ts =
            <td>#{taskDescription t}
            <td>#{fromMaybe "" $ taskProject t}
            <td>#{maybe "" show $ taskPriority t} 
+           <td>#{showTags $ taskTags t}
    |]
   
 taskWidget :: Task -> Widget
@@ -101,10 +104,19 @@ main = warpDebug 3000 TaskWarrior
 
 data Task = Task
   { taskId          :: Integer
-  , taskDescription :: String
-  , taskProject     :: Maybe String
+  , taskDescription :: Text
+  , taskProject     :: Maybe Text
   , taskPriority    :: Maybe Priority
+  , taskTags        :: [Tag]
   } deriving Show
+
+newtype Tag = Tag Text
+
+instance Show Tag where
+  show (Tag s) = "+" ++ unpack s
+
+showTags :: [Tag] -> String
+showTags ts = intercalate ", " $ show <$> ts
 
 data Priority = High | Medium | Low
               deriving Show
@@ -116,18 +128,23 @@ instance FromJSON Task where
     desc  <- v .: "description"
     proj  <- v .:? "project"
     pri   <- v .:? "priority"
+    tags  <- v .:? "tags"
     return Task { taskId          = ident
                 , taskDescription = desc
                 , taskProject     = proj
                 , taskPriority    = pri
+                , taskTags        = [] `fromMaybe` tags
                 }
 
-instance FromJSON (Priority) where
+instance FromJSON Priority where
   parseJSON (String s) = case s of
     "H" -> return High
     "M" -> return Medium
     "L" -> return Low
     
+instance FromJSON Tag where
+  parseJSON (String s) = return $ Tag s
+  
     
 -- natural transformation
 class f :~> g where
@@ -154,4 +171,4 @@ getTasksIO = do
   return . join .  ntrans $ (ntrans tasks :: Either String [Task])
 
 filterOutZeroId :: [Task] -> [Task]
-filterOutZeroId = filter (\t -> taskId t > 0)
+filterOutZeroId = filter $ (> 0) <$> taskId
