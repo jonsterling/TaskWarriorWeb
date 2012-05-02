@@ -129,7 +129,7 @@ instance FromJSON (Priority) where
     "L" -> return Low
     
     
--- natural ntransation
+-- natural transformation
 class f :~> g where
   ntrans :: f a -> g a
   
