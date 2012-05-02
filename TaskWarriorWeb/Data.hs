@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module TaskWarriorWeb.Data where
+import Yesod
 
 import Data.Aeson
 import qualified Data.Aeson.Types as T
