@@ -1,6 +1,4 @@
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module TaskWarriorWeb ( TaskWarrior(..) ) where

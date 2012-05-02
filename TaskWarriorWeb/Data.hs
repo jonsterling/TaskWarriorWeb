@@ -22,7 +22,7 @@ data Task = Task
 newtype Tag = Tag Text
 
 instance Show Tag where
-  show (Tag s) = "+" ++ unpack s
+  show (Tag s) = '+' : unpack s
 
 showTags :: [Tag] -> String
 showTags ts = intercalate ", " $ show <$> ts
@@ -44,7 +44,7 @@ instance FromJSON Task where
                 , taskProject     = proj
                 , taskPriority    = pri
                 , taskTags        = [] `fromMaybe` tags
-                , taskStarted     = maybe False (const True) strtd
+                , taskStarted     = isJust strtd
                 }
 
 instance FromJSON Priority where
