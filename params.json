@@ -1,0 +1,1 @@
+{"name":"TaskWarriorWeb","body":"A Yesod-based local web interface to TaskWarrior.\r\n\r\n~~~~shell\r\n$ runhaskell Main.hs\r\nApplication launched, listening on port 3000\r\n~~~~\r\n","tagline":"A quick & dirty Yesod-based local web interface to TaskWarrior","google":"","note":"Don't delete this file! It's used internally to help with page regeneration."}
