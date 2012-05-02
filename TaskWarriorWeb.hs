@@ -6,13 +6,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 
-module TaskWarrior where
-       
+module TaskWarriorWeb where
+import TaskWarriorWeb.Data
+
 import Yesod
 import Data.Aeson
 import qualified Data.Aeson.Types as T
-import Control.Applicative
 import Control.Monad
+import Control.Applicative
 import Data.Either
 import Data.Maybe
 import Data.Text (Text,unpack)
@@ -20,8 +21,7 @@ import qualified Data.ByteString.Char8 as BS
 -- Aeson's "encode" to json generates lazy bytestrings
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
-import Data.Attoparsec
-import Data.List (intercalate)
+import qualified Data.Attoparsec as A
 import System.Process
 
 
@@ -101,53 +101,6 @@ main = warpDebug 3000 TaskWarrior
 
 
 --- Data
-
-data Task = Task
-  { taskId          :: Integer
-  , taskDescription :: Text
-  , taskProject     :: Maybe Text
-  , taskPriority    :: Maybe Priority
-  , taskTags        :: [Tag]
-  , taskStarted     :: Bool
-  } deriving Show
-
-newtype Tag = Tag Text
-
-instance Show Tag where
-  show (Tag s) = "+" ++ unpack s
-
-showTags :: [Tag] -> String
-showTags ts = intercalate ", " $ show <$> ts
-
-data Priority = High | Medium | Low
-              deriving Show
-  
-
-instance FromJSON Task where
-  parseJSON (Object v) = do
-    ident <- v .: "id"
-    desc  <- v .: "description"
-    proj  <- v .:? "project"
-    pri   <- v .:? "priority"
-    tags  <- v .:? "tags"
-    strtd <- v .:? "start" :: T.Parser (Maybe Text)
-    return Task { taskId          = ident
-                , taskDescription = desc
-                , taskProject     = proj
-                , taskPriority    = pri
-                , taskTags        = [] `fromMaybe` tags
-                , taskStarted     = maybe False (const True) strtd
-                }
-
-instance FromJSON Priority where
-  parseJSON (String s) = case s of
-    "H" -> return High
-    "M" -> return Medium
-    "L" -> return Low
-    
-instance FromJSON Tag where
-  parseJSON (String s) = return $ Tag s
-  
     
 -- natural transformation
 class f :~> g where
@@ -168,8 +121,8 @@ getTasksIO :: IO [Task]
 getTasksIO = do
   out <- readProcess "task" ["export"] ""
   let input = BS.pack $ "[" ++ out ++ "]"
-  let tasks = case parse json input of 
-        Done _ val -> fromJSON val
+  let tasks = case A.parse json input of 
+        A.Done _ val -> fromJSON val
         _ -> mzero
   return . join .  ntrans $ (ntrans tasks :: Either String [Task])
 
